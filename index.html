@@ -152,7 +152,7 @@ body[style*="direction: rtl"] #cmd-prompt {margin-left:6px;margin-right:0;}
       <p>Balance: <span id="wallet-balance"></span> SUI</p>
       <p>Tokens:</p>
       <div id="token-list" style="font-size:11px;white-space:pre-line;background:#010;padding:6px;border:1px solid #033;max-height:120px;overflow:auto;"></div>
-      <button id="btn-airdrop">Airdrop 5 SUI</button>
+      <button id="btn-airdrop">Airdrop 5</button>
     </div>
   </div>
 
@@ -620,7 +620,7 @@ function run(line){
 
   if(socialsContextActive){
     const lower=line.toLowerCase();
-    if(lower==='twitter'){socialsContextActive=false;log('Opening Twitter (X)...','ok');window.open('https://x.com/SuiTerminal','_blank','noopener,noreferrer');return;}
+    if(lower==='twitter'){socialsContextActive=false;log('Opening Twitter (X)...','ok');window.open('https://x.com/solmatrixx','_blank','noopener,noreferrer');return;}
     if(lower==='exit'){socialsContextActive=false;log('Socials mode exited.','faint');return;}
     log('Type `twitter` to open feed or `exit` to cancel.','warn');return;
   }
@@ -779,7 +779,7 @@ function initIntro(){
   cmd.disabled=true;guideBanner.classList.add('active');promptEl.textContent='MATRIX>';
   const sessionHash='0x'+Array.from(crypto.getRandomValues(new Uint8Array(6))).map(b=>b.toString(16).padStart(2,'0')).join('');
   const lines=[
-    '▌ INITIALIZING SUI.exe Q&A NODE ...',
+    '▌ INITIALIZING MATRIX  NODE ...',
     '▌ HANDSHAKE HASH '+sessionHash,
     '▌ CALIBRATING SIGNAL: NOISE  ████▒▒▒ 42%',
     '▌ DECRYPTING LAYERS  ██████▒▒ 68%',
