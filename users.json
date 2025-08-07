@@ -1,0 +1,124 @@
+{
+  "users": {
+    "hidsadas": {
+      "username": "hidsadas",
+      "passHash": "$2b$10$cPzB8QOnwxvUT3oOljGgreu2F4BBINrvhB93QIpujVqYbex7Ndb0i",
+      "created": 1753111847210,
+      "lastSeen": 1753111847210,
+      "stats": {
+        "exitProgress": 0,
+        "ascensions": 0,
+        "rank": "Initiate",
+        "spores": 0
+      }
+    },
+    "sgdsgd": {
+      "username": "sgdsgd",
+      "passHash": "$2b$10$6h.S2H0G7v2Z/PgFU/nu7.3BPKfQv50wBZiotSI455c36BOpQlXL6",
+      "created": 1753111865279,
+      "lastSeen": 1753111865279,
+      "stats": {
+        "exitProgress": 0,
+        "ascensions": 0,
+        "rank": "Initiate",
+        "spores": 0
+      }
+    },
+    "fsdfsdf": {
+      "username": "fsdfsdf",
+      "passHash": "$2b$10$AFXK9yfat8suMsRIB.pjQuNDoQqycwjPep/h7tlGbgF8L5HCDzeQy",
+      "created": 1753112129105,
+      "lastSeen": 1753112129105,
+      "stats": {
+        "exitProgress": 0,
+        "ascensions": 0,
+        "rank": "Initiate",
+        "spores": 0
+      }
+    },
+    "asfasfsad": {
+      "username": "asfasfsad",
+      "passHash": "$2b$10$tNRF3ywYLleWAmm7iKaYTe5T4XSIsBj1y6r4noQkWy4MdPgQ/G0gO",
+      "created": 1753112147092,
+      "lastSeen": 1753112147092,
+      "stats": {
+        "exitProgress": 0,
+        "ascensions": 0,
+        "rank": "Initiate",
+        "spores": 0
+      }
+    },
+    "noober1": {
+      "username": "noober1",
+      "passHash": "$2b$10$EZFgKkbwwlc9TlWDrPzNDu3V/bcukvasvOqYbUdUEYmlrRxcjVnmW",
+      "created": 1753112163955,
+      "lastSeen": 1753112163955,
+      "stats": {
+        "exitProgress": 0,
+        "ascensions": 0,
+        "rank": "Initiate",
+        "spores": 0
+      }
+    },
+    "noob3434": {
+      "username": "noob3434",
+      "passHash": "$2b$10$wpE0WfLNLbTr8EGvE07.IOjGJedXo/fLYH4xi6FNiOBaugMS6Hbqi",
+      "created": 1753113729530,
+      "lastSeen": 1753113729530,
+      "stats": {
+        "exitProgress": 0,
+        "ascensions": 0,
+        "rank": "Initiate",
+        "spores": 0
+      }
+    },
+    "fasdfasd": {
+      "username": "fasdfasd",
+      "passHash": "$2b$10$hPydGOmApO3B5mWkikdeQONtIUrEiNGFtwwBIm.VD0znoMPjVMuNK",
+      "created": 1753117007288,
+      "lastSeen": 1753117007288,
+      "stats": {
+        "exitProgress": 0,
+        "ascensions": 0,
+        "rank": "Initiate",
+        "spores": 0
+      }
+    },
+    "fasfasd": {
+      "username": "fasfasd",
+      "passHash": "$2b$10$cpTfwMHIPY519kknYHYK0.4MrRjXMj7jy2tulh9mYWQoi0g/X4Dpa",
+      "created": 1753117059464,
+      "lastSeen": 1753117059464,
+      "stats": {
+        "exitProgress": 0,
+        "ascensions": 0,
+        "rank": "Initiate",
+        "spores": 0
+      }
+    },
+    "gsdgdsf": {
+      "username": "gsdgdsf",
+      "passHash": "$2b$10$Ha89qV1mFmtCyBRIAD/9ku4mm.Trkjm/Nmlf63QFbep3FWYKtLD1i",
+      "created": 1753117570653,
+      "lastSeen": 1753118806186,
+      "stats": {
+        "exitProgress": 68,
+        "ascensions": 0,
+        "rank": "Resonant",
+        "spores": 68
+      }
+    },
+    "nobo123": {
+      "username": "nobo123",
+      "passHash": "$2b$10$53z617pAJDxIP7uqw7Q.Z.J1WjTdcDQass3vMF2zGNfNcKg9gDO9y",
+      "created": 1754491931232,
+      "lastSeen": 1754493330154,
+      "stats": {
+        "exitProgress": 70,
+        "ascensions": 0,
+        "rank": "Resonant",
+        "spores": 70
+      }
+    }
+  }
+}

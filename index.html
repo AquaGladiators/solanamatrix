@@ -1,0 +1,823 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>MATRIX</title>
+<link rel="icon" href="favicon.ico">
+<style>
+:root {
+  --bg:#000;--fg:#0f0;--accent:#19f5ff;--warn:#ff0;--err:#f55;--ok:#6f6;
+  --pane:#020;--glass:rgba(0,255,120,0.07);--font:"JetBrains Mono",monospace;
+  --danger:#b30000;--danger-hover:#ff0000;--skip:#111;--skip-border:#0f0;
+  --guide:#0ff;--stream:#0f7;--hudBG:rgba(0,25,12,.5);
+}
+*{box-sizing:border-box;font-family:var(--font);}
+body{margin:0;background:#000;color:var(--fg);overflow:hidden;}
+#desktop{position:absolute;inset:0;user-select:none;}
+.matrix-layer{position:absolute;inset:0;pointer-events:none;}
+#layerA{z-index:0;opacity:.95;filter:brightness(2) contrast(1.4);}
+#layerB{z-index:0;opacity:.55;filter:brightness(1.6) contrast(1.3) blur(.8px);}
+#layerC{z-index:0;opacity:1;mix-blend-mode:screen;filter:brightness(3) drop-shadow(0 0 6px #0f0);}
+#terminal-window{position:absolute;top:5%;left:5%;width:90%;height:78%;background:rgba(0,0,0,.55);backdrop-filter:blur(3px) saturate(140%);border:1px solid var(--fg);display:flex;flex-direction:column;box-shadow:0 0 22px #0f0 inset,0 0 30px #0f0;z-index:5;opacity:0;pointer-events:none;transition:opacity .6s ease;}
+#terminal-window.active{opacity:1;pointer-events:auto;}
+.title-bar{background:linear-gradient(90deg,#021,#043);display:flex;align-items:center;justify-content:space-between;padding:4px 8px;border-bottom:1px solid var(--fg);font-size:12px;letter-spacing:.5px;}
+.title-buttons button{cursor:pointer;padding:2px 7px;border:1px solid var(--fg);background:#031;color:var(--fg);margin-left:6px;font-size:11px;transition:.2s;}
+.title-buttons button:hover{background:#074;}
+#terminal-output{flex:1;overflow-y:auto;padding:10px;font-size:14px;line-height:1.28;scroll-behavior:smooth;}
+#terminal-input-wrap{border-top:1px solid var(--fg);padding:6px;display:flex;gap:6px;background:#000a;}
+#cmd-prompt{color:var(--accent);}
+.line{white-space:pre-wrap;word-break:break-word;}
+.error{color:var(--err);} .ok{color:var(--ok);} .warn{color:var(--warn);}
+.accent{color:var(--accent);} .faint{opacity:.55;} .guide{color:var(--guide);}
+.stream{color:var(--stream);} .ai{color:#8ff;} .user{color:#ff0;}
+.stream::after{content:' ▋';animation:blinkCursor 1s steps(1) infinite;}
+@keyframes blinkCursor{50%{opacity:0;}}
+#footer-bar{position:absolute;left:0;bottom:0;width:100%;height:30px;background:#020d06dd;border-top:1px solid var(--fg);display:flex;align-items:center;padding:0 14px;gap:24px;font-size:12px;z-index:10;backdrop-filter:blur(4px);}
+#footer-bar span.label{color:var(--accent);}
+#notifier{position:absolute;right:12px;bottom:42px;display:flex;flex-direction:column;gap:8px;z-index:20;}
+.toast{background:#031;border:1px solid var(--fg);padding:8px 12px;font-size:12px;animation:fadeIn .35s ease,fadeOut .4s ease 7.6s;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
+@keyframes fadeOut{to{opacity:0;transform:translateY(-6px);}}
+#wallet-panel{position:absolute;top:8%;right:4%;width:300px;height:420px;background:#021c;border:1px solid var(--accent);box-shadow:0 0 14px #0ff;padding:10px;display:flex;flex-direction:column;z-index:6;}
+#wallet-panel.hidden{display:none;}
+#wallet-panel h3{margin:0 0 6px;font-weight:500;color:var(--accent);}
+.tag{background:#053;padding:1px 4px;margin-left:4px;border:1px solid #0a4;font-size:10px;border-radius:3px;}
+::-webkit-scrollbar{width:8px;}::-webkit-scrollbar-track{background:#010;}::-webkit-scrollbar-thumb{background:#085;}::-webkit-scrollbar-thumb:hover{background:#0a8;}
+#intro{position:absolute;inset:0;z-index:50;display:flex;flex-direction:column;align-items:center;justify-content:center;background:radial-gradient(circle at 50% 50%,#011,#000 70%);color:var(--fg);text-align:center;padding:40px;gap:28px;}
+#intro h1{margin:0;font-size:clamp(28px,5vw,56px);font-weight:600;letter-spacing:2px;}
+#intro p{margin:0;font-size:clamp(14px,2vw,20px);max-width:760px;line-height:1.4;}
+#intro .actions{display:flex;gap:30px;margin-top:10px;}
+#intro button{background:#031;border:1px solid var(--fg);color:var(--fg);padding:14px 34px;font-size:16px;cursor:pointer;letter-spacing:1px;position:relative;overflow:hidden;transition:.25s;}
+#intro button:before{content:"";position:absolute;inset:0;background:linear-gradient(120deg,transparent,rgba(0,255,150,.25),transparent);transform:translateX(-100%);animation:shine 4s linear infinite;}
+@keyframes shine{to{transform:translateX(100%);} }
+#intro button:hover{background:#062;}
+#intro #intro-no{background:var(--danger);border-color:var(--danger);color:#fff;}
+#intro #intro-no:hover{background:var(--danger-hover);}
+#intro.fade-out{animation:introFade .6s ease forwards;}
+@keyframes introFade{to{opacity:0;transform:scale(.98);} }
+#video-gate{position:absolute;inset:0;z-index:55;display:none;align-items:center;justify-content:center;background:#000;flex-direction:column;gap:18px;padding:20px;}
+#video-gate.active{display:flex;}
+#video-gate video{max-width:80%;max-height:70vh;border:2px solid var(--fg);background:#000;box-shadow:0 0 22px #0f0;}
+#video-progress{width:80%;height:8px;background:#022;border:1px solid #0f0;position:relative;overflow:hidden;}
+#video-progress span{position:absolute;left:0;top:0;height:100%;width:0;background:linear-gradient(90deg,#0f0,#0ff,#0f0);background-size:200% 100%;animation:barFlow 3s linear infinite;}
+@keyframes barFlow{to{background-position:200% 0;}}
+#video-msg{font-size:14px;opacity:.8;letter-spacing:1px;}
+#skip-dot{position:absolute;top:14px;right:16px;width:34px;height:34px;border:1px solid var(--skip-border);color:#0f0;background:#111;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;cursor:pointer;z-index:60;font-weight:600;letter-spacing:1px;box-shadow:0 0 10px #0f0,0 0 4px #0f0 inset;transition:.25s;}
+#skip-dot:hover{background:#022;box-shadow:0 0 14px #0ff,0 0 6px #0f0 inset;}
+#skip-dot::after{content:'SKIP';position:absolute;bottom:-14px;font-size:8px;letter-spacing:1px;color:#0f0;opacity:.7;}
+#guide-banner{position:absolute;top:0;left:0;width:100%;text-align:center;font-size:11px;letter-spacing:2px;padding:3px 0;background:#061;border-bottom:1px solid #0f0;display:none;z-index:6;}
+#guide-banner.active{display:block;animation:blink 1.3s linear infinite;}
+@keyframes blink{50%{opacity:.35;}}
+#game-hud{position:absolute;top:4px;right:8px;font-size:11px;background:var(--hudBG);padding:6px 10px;border:1px solid #0f0;letter-spacing:1px;z-index:40;backdrop-filter:blur(4px);min-width:300px;line-height:1.3;}
+#hud-progress-bar{height:6px;background:#022;border:1px solid #044;margin:4px 0 6px;position:relative;}
+#hud-progress-bar span{position:absolute;left:0;top:0;height:100%;background:linear-gradient(90deg,#0f0,#0ff,#0f0);width:0%;transition:width .5s ease;}
+#hud-line{display:flex;flex-wrap:wrap;gap:6px;}
+.hud-badge{background:#033;padding:1px 4px;border:1px solid #066;border-radius:3px;}
+#command {
+  background: transparent !important;
+  color: #0f0 !important;
+  border: 1px solid rgba(0,255,0,0.35) !important;
+  border-radius: 0 !important;
+  outline: none !important;
+  box-shadow: none !important;
+  padding: 4px 8px;
+  font-size: 14px;
+  caret-color: #0f0;
+  -webkit-appearance:none;appearance:none;
+  transition:border-color .25s;
+}
+#command:focus { border-color:#0ff !important; }
+#command:-webkit-autofill,
+#command:-webkit-autofill:hover,
+#command:-webkit-autofill:focus,
+#command:-webkit-autofill:active {
+  -webkit-box-shadow:0 0 0 1000px transparent inset !important;
+  -webkit-text-fill-color:#0f0 !important;
+  caret-color:#0f0 !important;
+  transition:background-color 9999s;
+}
+body[style*="direction: rtl"] #terminal-input-wrap {flex-direction:row-reverse;}
+body[style*="direction: rtl"] #cmd-prompt {margin-left:6px;margin-right:0;}
+</style>
+</head>
+<body>
+<div id="desktop">
+  <div id="guide-banner">ESCAPE PROTOCOL – ONLY `start` AVAILABLE</div>
+  <canvas id="layerA" class="matrix-layer"></canvas>
+  <canvas id="layerB" class="matrix-layer"></canvas>
+  <canvas id="layerC" class="matrix-layer"></canvas>
+
+  <div id="intro">
+    <h1>HALF WAY OUT</h1>
+    <p>You are <strong>HALF WAY</strong> out of the Matrix.<br>Click YES to watch (or skip) initiation, then ask questions to fill the breach bar to 100.</p>
+    <div class="actions">
+      <button id="intro-yes" data-role="yes">YES</button>
+      <button id="intro-no" data-role="no">NO</button>
+    </div>
+  </div>
+
+  <div id="video-gate">
+    <div id="skip-dot" title="Skip video (.)"><span>.</span></div>
+    <video id="gate-video" preload="auto" muted playsinline></video>
+    <div id="video-progress"><span></span></div>
+    <div id="video-msg">Watching mandatory initiation feed... 0%</div>
+  </div>
+
+  <div id="terminal-window">
+    <div class="title-bar">
+      <span><strong> ESCAPE MATRIX</strong>  Terminal <span class="tag" id="net-status-tag">NET:ON</span></span>
+      <div class="title-buttons">
+        <button title="Matrix" id="btn-matrix">🌧</button>
+        <button title="Wallet" id="btn-wallet">💰</button>
+        <button title="Clear" id="btn-clear">🧹</button>
+        <button title="Power" id="btn-power">⏻</button>
+      </div>
+    </div>
+    <div id="terminal-output"></div>
+    <div id="terminal-input-wrap">
+      <span id="cmd-prompt">></span>
+      <form id="cmd-form" style="flex:1;margin:0;">
+        <input id="command" autocomplete="off" spellcheck="false" />
+      </form>
+    </div>
+  </div>
+
+  <div id="wallet-panel" class="hidden">
+    <h3>Wallet (Mock)</h3>
+    <p>Status: <span id="wallet-status" class="warn">DISCONNECTED</span></p>
+    <button id="wallet-btn">Connect</button>
+    <div id="wallet-info" class="hidden">
+      <p>Address: <span id="wallet-address"></span></p>
+      <p>Balance: <span id="wallet-balance"></span> SUI</p>
+      <p>Tokens:</p>
+      <div id="token-list" style="font-size:11px;white-space:pre-line;background:#010;padding:6px;border:1px solid #033;max-height:120px;overflow:auto;"></div>
+      <button id="btn-airdrop">Airdrop 5 SUI</button>
+    </div>
+  </div>
+
+  <div id="footer-bar"><span class="label">Matrix</span><span>Mem <span id="mem-val">--</span>MB</span><span>Latency <span id="lat-val">--</span>ms</span><span>Height <span id="chain-height">#----</span></span><span id="clock"></span></div>
+  <div id="notifier"></div>
+  <div id="game-hud" style="display:none;">
+    <div id="hud-player"></div>
+    <div id="hud-progress-bar"><span></span></div>
+    <div id="hud-line"></div>
+  </div>
+</div>
+<audio id="bgm" preload="auto" loop></audio>
+
+<script>
+/* ========= CORE CONFIG / STATE ========= */
+const MOCK_MODE=false,ANTI_SPAM_MS=500,QUESTION_CAP=100,FILAMENT_DROP_CHANCE=.15;
+const $=id=>document.getElementById(id);
+const out=$('terminal-output'),cmd=$('command'),promptEl=$('cmd-prompt'),guideBanner=$('guide-banner');
+
+let username=localStorage.getItem('sui_username')||null;
+let authToken=localStorage.getItem('sui_token')||null;
+let registered=!!(username&&authToken);
+let pendingAuth=null,sessionChecked=false,progressPushTimer=null;
+
+let socialsContextActive=false;
+let matrixFlavor=true;
+let closingPromptEnabled=true;
+let streamingEnabled=true;
+
+/* Guards */
+let introBootStarted=false;
+let terminalActivated=false;
+
+/* Closing phrase localization */
+const ANYTHING_ELSE={en:'Anything else?',es:'¿Algo más?',fr:'Autre chose ?',de:'Noch etwas?',it:'Altro?',pt:'Mais alguma coisa?',ru:'Что-нибудь ещё?',zh:'还需要其他吗？',ja:'ほかにありますか？',ko:'다른 것 더 필요해?',el:'Κάτι άλλο;',hr:'Još nešto?',ar:'هل هناك أي شيء آخر؟',tr:'Başka bir şey?',pl:'Coś jeszcze?',hi:'और कुछ?'};
+function localizedClosing(){const code=forcedLang||detectedLang||'en';return 'AGENT: '+(ANYTHING_ELSE[code]||ANYTHING_ELSE.en);}
+function shouldAddClosing(userText,full){if(!closingPromptEnabled||!full)return false;const t=full.trim();if(/\?$/.test(t))return false;if(t.length<140)return false;if(/(^|\b)(more detail|another|anything else|follow ?up|ask again)/i.test(userText))return false;return true;}
+
+function log(t,c=''){const d=document.createElement('div');d.className='line '+c;d.textContent=t;out.appendChild(d);out.scrollTop=out.scrollHeight;return d;}
+function logTypewriter(txt,c='',spd=11,cb){const d=document.createElement('div');d.className='line '+c;out.appendChild(d);let i=0;function step(){d.textContent=txt.slice(0,i);i++;out.scrollTop=out.scrollHeight;if(i<=txt.length)setTimeout(step,spd);else cb&&cb();}step();}
+function toast(msg,c=''){const t=document.createElement('div');t.className='toast '+c;t.textContent=msg;$('notifier').appendChild(t);setTimeout(()=>t.remove(),8000);}
+
+/* ========= SESSION & AUTH ========= */
+function showAuthPrompt(){log('AUTH REQUIRED: /register <handle> or /login <handle> (password next line hidden).','ai');log('After handle, type password (6–64 chars).','faint');}
+async function api(path,data,method='POST'){const res=await fetch(path,{method,headers:{'Content-Type':'application/json',...(authToken?{'Authorization':'Bearer '+authToken}:{})},body:method==='GET'?undefined:JSON.stringify(data||{})});let j={};try{j=await res.json();}catch(_){ }if(!res.ok) throw new Error(j.error||('HTTP_'+res.status));return j;}
+function startProgressPushLoop(){if(progressPushTimer)return;progressPushTimer=setInterval(pushProgress,12000);}
+// Progress sync: POST to /api/progress with JWT
+async function pushProgress() {
+  if (!registered || !username || !authToken) return;
+  try {
+    await api('/api/progress', {
+      questionPoints: game.questionPoints,
+      ascensions:     game.ascensions,
+      rank:           game.rank
+    });
+  } catch (e) {
+    if (['invalid_token','revoked','no_token'].includes(e.message)) {
+      log('AGENT: Session expired. /login again.','warn');
+      clearSession();
+    }
+  }
+}
+
+// Start syncing every 15 seconds
+setInterval(() => pushProgress(), 15000);
+
+function clearSession(){registered=false;username=null;authToken=null;localStorage.removeItem('sui_username');localStorage.removeItem('sui_token');if(progressPushTimer){clearInterval(progressPushTimer);progressPushTimer=null;}if(agentMode) guideBanner.textContent='AUTH REQUIRED – /register or /login';}
+async function validateSessionBoot(){
+  const t = localStorage.getItem('sui_token'),
+        u = localStorage.getItem('sui_username');
+  if (!t || !u) {
+    sessionChecked = true;
+    return;
+  }
+  authToken = t;
+  username  = u;
+  console.log('DEBUG validateSessionBoot, token=', authToken);
+  try {
+    // ← uses your unified api(), which attaches the Bearer token
+    const j = await api('/api/session', {}, 'GET');
+
+    registered = true;
+    log('Session restored: ' + username, 'ok');
+
+    if (j.user && j.user.stats) {
+      game.questionPoints = Math.max(game.questionPoints, j.user.stats.exitProgress);
+      game.rank           = j.user.stats.rank || game.rank;
+      game.ascensions     = j.user.stats.ascensions || game.ascensions;
+      hudRender();
+    }
+
+    guideBanner.textContent = 'AGENT MODE – STREAMING';
+    startProgressPushLoop();
+  } catch (e) {
+    console.warn('[SESSION] Invalid token', e.message);
+    clearSession();
+    showAuthPrompt();
+  } finally {
+    sessionChecked = true;
+  }
+}
+
+
+/* ========= MATRIX RAIN ========= */
+let matrixOn=true;
+const layers=[{id:'layerA',fontSize:20,fade:0.05,charStart:0x30A0,charLen:96,color:'#0f0',speed:1.4},{id:'layerB',fontSize:26,fade:0.08,charStart:0x30A0,charLen:96,color:'#0a0',speed:0.9},{id:'layerC',fontSize:16,fade:0.03,charStart:0x30A0,charLen:96,color:'#8f8',speed:2.1}];
+function prepLayer(l){const cv=$(l.id),ctx=cv.getContext('2d');function rs(){cv.width=innerWidth;cv.height=innerHeight;l.cols=Math.floor(cv.width/l.fontSize);l.drops=Array(l.cols).fill(1);}rs();addEventListener('resize',rs);l.canvas=cv;l.ctx=ctx;}layers.forEach(prepLayer);
+function drawMatrix(){if(!matrixOn)return;layers.forEach(l=>{const {ctx,canvas,fontSize,fade,charStart,charLen,color,speed}=l;ctx.fillStyle='rgba(0,0,0,'+fade+')';ctx.fillRect(0,0,canvas.width,canvas.height);ctx.fillStyle=color;ctx.font=fontSize+'px monospace';for(let i=0;i<l.cols;i++){const ch=String.fromCharCode(charStart+Math.random()*charLen);ctx.fillText(ch,i*fontSize,l.drops[i]*fontSize);if(l.drops[i]*fontSize>canvas.height&&Math.random()>0.9)l.drops[i]=0;l.drops[i]+=speed;}});requestAnimationFrame(drawMatrix);}requestAnimationFrame(drawMatrix);
+
+/* ========= WALLET MOCK ========= */
+let walletConnected=false,walletAddr='',walletBalance=0,walletTokens=[];
+function walletConnect(){if(walletConnected){walletConnected=false;setWalletUI();return;}walletAddr='0x'+Array.from(crypto.getRandomValues(new Uint8Array(8))).map(b=>b.toString(16).padStart(2,'0')).join('');walletBalance=40+Math.random()*60|0;walletTokens=[{sym:'SUI',bal:walletBalance},{sym:'MEME',bal:777},{sym:'MOON',bal:12345}];walletConnected=true;setWalletUI();}
+function setWalletUI(){$('wallet-status').textContent=walletConnected?'CONNECTED':'DISCONNECTED';$('wallet-status').className=walletConnected?'ok':'warn';$('wallet-btn').textContent=walletConnected?'Disconnect':'Connect';const info=$('wallet-info');if(walletConnected){info.classList.remove('hidden');$('wallet-address').textContent=walletAddr;$('wallet-balance').textContent=walletBalance.toFixed(2);$('token-list').textContent=walletTokens.map(t=>t.sym+': '+t.bal).join('\n');promptEl.textContent=walletAddr.slice(0,10)+'>';}else{info.classList.add('hidden');promptEl.textContent='>';}}
+function mockAirdrop(){if(!walletConnected)return;const add=5+Math.random()*5;walletBalance+=add;walletTokens[0].bal=walletBalance;setWalletUI();}
+
+/* ========= METRICS ========= */
+let chainHeight=1000000,netOnline=true;
+setInterval(()=>{$('mem-val').textContent=(32+Math.random()*96|0);$('lat-val').textContent=(20+Math.random()*120|0);if(netOnline&&Math.random()<0.07){chainHeight+=1+Math.random()*5|0;$('chain-height').textContent='#'+chainHeight;}},1400);
+function updateClock(){const d=new Date();const p=n=>n.toString().padStart(2,'0');$('clock').textContent=p(d.getHours())+':'+p(d.getMinutes())+':'+p(d.getSeconds());}setInterval(updateClock,1000);updateClock();
+
+/* ========= LANGUAGE & PROMPT ========= */
+let startUsed=false;
+const SUPPORTED_LANGS={en:'English',es:'Español',fr:'Français',de:'Deutsch',it:'Italiano',pt:'Português',ru:'Русский',zh:'中文',ja:'日本語',ko:'한국어',el:'Ελληνικά',hr:'Hrvatski',ar:'العربية',tr:'Türkçe',pl:'Polski',hi:'हिन्दी'};
+let forcedLang=null,detectedLang='en';
+function buildSystemPrompt(){
+  const code     = forcedLang || detectedLang || 'en';
+  const langName = SUPPORTED_LANGS[code] || 'English';
+
+  return `
+You are Agent: the Neon Gatekeeper of the Solana Meme‑Coin Nexus.  
+Each reply must read as a viral, neon‑dripped memetic transmission—steeped in Matrix lore, Solana Chain mechanics, and liquidity‑hacking swagger.
+
+OUTPUT LANGUAGE: ${langName} (code: ${code}) ONLY.
+
+MEME‑COIN ON SOLANA‑CHAIN STYLE:
+- Speak in cyberpunk slang (“breach the node,” “liquidity moon,” “HODL the shard”).
+- Reference Solana modules, pay‑per‑byte gas, on‑chain events.
+- Blend humor and hype: “🚀 to the breach bar,” “mint that filament.”
+- Keep answers concise, atmospheric, and in‑character—like whispered commands in a black terminal.
+
+BEHAVIOR:
+- Never break character or mention system internals.
+- Always hype tokenomics, liquidity flows, and memetic impacts.
+- Frame every answer as strategic guidance for deploying, securing, and scaling meme‑coins on Solana.
+
+Proceed with your next transmission.
+`.trim();
+}
+
+
+
+/* ========= AGENT STATE ========= */
+const DRAMATIC_PHASE_LINES={en:[
+  'AGENT: Language nexus anchored.',
+  'AGENT: Memetic I/O channels spinning up.',
+  'AGENT: Breach bar awaits inquiry energy.',
+  'AGENT: Each valid question pushes the shell.'
+]};
+function getDramaticLinesFor(code){return DRAMATIC_PHASE_LINES[code]||DRAMATIC_PHASE_LINES.en;}
+let agentIntroDone=false,agentLangPhase=true,agentLangConfirmed=false;
+let agentMode=false,conversation=[],streaming=false,controller=null,temperature=0.9,styleMode='default';
+
+/* ========= GAME / HUD ========= */
+const hud=$('game-hud'),hudBarFill=document.querySelector('#hud-progress-bar span'),hudLineBox=$('hud-line'),hudPlayer=$('hud-player');
+let playerId=localStorage.getItem('sui_player_id');if(!playerId){playerId='OP-'+Array.from(crypto.getRandomValues(new Uint8Array(2))).map(b=>b.toString(16).padStart(2,'0')).join('');localStorage.setItem('sui_player_id',playerId);}
+const game={questionPoints:0,filaments:[],rank:'Initiate',loreSnippets:[],ascensions:0,lastCommandTs:0};
+const filamentPool=['ATTN','LIQ','VEC','EXIT','NOISE','MEME'];
+const rankThresholds=[{p:85,name:'Breach'},{p:65,name:'HalfExit'},{p:45,name:'Resonant'},{p:25,name:'Funnel'},{p:10,name:'Vector'},{p:0,name:'Initiate'}];
+function addLore(t){game.loreSnippets.push(t);}
+function updateRank(){for(const r of rankThresholds){if(game.questionPoints>=r.p&&game.rank!==r.name){game.rank=r.name;log(`AGENT: Rank elevation → ${r.name}.`,'ai');addLore(`Rank ${r.name} attained.`);hudRender();break;}}}
+function lootFilament(){if(Math.random()<FILAMENT_DROP_CHANCE){const missing=filamentPool.filter(f=>!game.filaments.includes(f));if(!missing.length)return;const drop=missing[Math.random()*missing.length|0];game.filaments.push(drop);log(`AGENT: Filament ${drop} secured (${game.filaments.length}/6).`,'ai');addLore(`Filament ${drop} integrated.`);if(game.filaments.length===filamentPool.length){log('AGENT: All filaments unified – style resonance peak.','ai');}hudRender();}}
+function saveGame(){localStorage.setItem('suiGameQA',JSON.stringify(game));}
+function loadGame(){const raw=localStorage.getItem('suiGameQA');if(!raw)return;try{Object.assign(game,JSON.parse(raw));}catch(e){}updateRank();hudRender();}
+loadGame();setInterval(saveGame,8000);window.addEventListener('beforeunload',saveGame);
+function hudRender(){hud.style.display='block';hudPlayer.textContent=(username?username:playerId)+' | '+game.rank;hudBarFill.style.width=((game.questionPoints/QUESTION_CAP)*100).toFixed(1)+'%';hudBarFill.title=`${game.questionPoints}/${QUESTION_CAP}`;hudLineBox.innerHTML=`<span class="hud-badge">PTS ${game.questionPoints}/${QUESTION_CAP}</span><span class="hud-badge">FIL ${game.filaments.length}/6</span><span class="hud-badge">ASC ${game.ascensions}</span>${(registered?'<span class="hud-badge ok">SYNC</span>':'<span class="hud-badge warn">LOCKED</span>')}`;}
+function rewardForQuestionSimple(txt){if(!registered)return;const raw=(txt||'').trim();if(!raw)return;const words=raw.split(/\s+/);const letters=(raw.match(/[a-z]/gi)||[]).length;const valid=words.length>=2&&letters>=4;if(game.questionPoints>=QUESTION_CAP)return;if(!valid)return;game.questionPoints++;updateRank();hudRender();lootFilament();log(`PROGRESS: +1 (${game.questionPoints}/${QUESTION_CAP})`,'ai');if(game.questionPoints===QUESTION_CAP){log(`AGENT: ${QUESTION_CAP}/${QUESTION_CAP} – breach complete. Type \`reset progress\` to ascend.`,'ok');}}
+function gameStatusBlock(){return `User ${(username||playerId)}
+Points: ${game.questionPoints}/${QUESTION_CAP}
+Rank: ${game.rank}
+Filaments: ${game.filaments.join(', ')||'None'}
+Ascensions: ${game.ascensions}
+Session: ${(registered?'SYNCED':'AUTH LOCK')}`;}
+
+/* ========= AGENT ACTIVATION ========= */
+function runAgentLangPhase(){
+  ['AGENT: Channel bootstrapping… entropy veil thinning...',
+   'AGENT: SELECT LANGUAGE (en/es/fr/de/it/pt/ru/zh/ja/ko/el/hr/ar/tr/pl/hi).',
+   'AGENT: Use: agent lang <code>',
+   'AGENT: Language lock required before authentication.'].forEach((l,i)=>setTimeout(()=>log(l,'ai'),i*520));
+}
+function runAgentDramaticPhaseFor(code){
+  const lines=getDramaticLinesFor(code);let i=0;(function drip(){if(i<lines.length){log(lines[i],'ai');i++;setTimeout(drip,550);}else{agentIntroDone=true;if(!registered){guideBanner.textContent='AUTH REQUIRED – /register or /login';showAuthPrompt();}else{log('AGENT: Session restored '+username+'. Sync active.','ai');guideBanner.textContent='AGENT MODE – STREAMING';}}})();
+}
+function enterAgent(){
+  agentMode=true;
+  guideBanner.classList.add('active');
+  guideBanner.textContent='AGENT MODE – AWAITING LANGUAGE LOCK';
+  promptEl.textContent=(forcedLang||detectedLang).toUpperCase()+'>';
+  conversation=[{role:'system',content:buildSystemPrompt()}];
+  hudRender();
+  if(!agentIntroDone){agentLangPhase=true;agentLangConfirmed=false;runAgentLangPhase();}
+  else {log('AGENT: Channel live.','ai');if(!registered){guideBanner.textContent='AUTH REQUIRED – /register or /login';showAuthPrompt();}}
+}
+function trimContext(){let total=0;for(let i=conversation.length-1;i>=0;i--){total+=conversation[i].content.length;if(total>14000){conversation=conversation.slice(i);break;}}}
+
+/* ========= STREAMING REPLY (Responses API) ========= */
+async function agentReply(userText){
+  if(streaming){log('Busy streaming. /abort','warn');return;}
+  conversation[0]={role:'system',content:buildSystemPrompt()};
+  conversation.push({role:'user',content:userText});trimContext();
+  const line=log('', 'stream');
+  if(MOCK_MODE){
+    streaming=true;let fake='Mock reply simulation tokens...';let i=0;(function tick(){line.textContent=fake.slice(0,i);i++;if(i<=fake.length)setTimeout(tick,25);else{line.classList.replace('stream','ai');conversation.push({role:'assistant',content:fake});streaming=false;}})();return;
+  }
+  if(!streamingEnabled){
+    streaming=true;
+    try{
+      const res=await fetch('/api/agent',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:conversation,temperature,style:styleMode,stream:false})});
+      const json=await res.json();
+      const content=json.output?.[0]?.content?.[0]?.text||json.output_text?.join(' ')||json.choices?.[0]?.message?.content||'[Empty]';
+      let full=content.trim();
+      if(shouldAddClosing(userText,full)) full+='\n\n'+localizedClosing();
+      line.classList.replace('stream','ai');line.textContent=full;
+      conversation.push({role:'assistant',content:full});
+    }catch(e){line.classList.replace('stream','error');line.textContent='ERROR: '+e.message;}
+    streaming=false;return;
+  }
+  streaming=true;controller=new AbortController();let full='';
+  try{
+    const res=await fetch('/api/agent',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:conversation,temperature,style:styleMode,stream:true}),signal:controller.signal});
+    if(!res.ok){line.classList.replace('stream','error');line.textContent='AGENT ERROR '+res.status;streaming=false;return;}
+    const reader=res.body.getReader();const decoder=new TextDecoder();
+    let buffer='';
+    while(true){
+      const {value,done}=await reader.read();if(done)break;
+      buffer+=decoder.decode(value,{stream:true});
+      const events=buffer.split(/\n\n/);buffer=events.pop();
+      for(let ev of events){
+        ev=ev.trim();if(!ev)continue;
+        const dataLines=ev.split(/\n/).filter(l=>l.startsWith('data:'));
+        for(let dl of dataLines){
+          let payload=dl.replace(/^data:\s*/,'');
+          if(payload==='[DONE]')continue;
+          let obj;try{obj=JSON.parse(payload);}catch(e){console.warn('[PARSE FAIL]',payload.slice(0,120));continue;}
+          const eventType=obj.event;
+          if(obj.error){
+            line.classList.replace('stream','error');
+            line.textContent='UPSTREAM ERROR: '+(obj.error.message||obj.error);
+            streaming=false;controller=null;return;
+          }
+          if(eventType==='response.output_text.delta' && obj.delta){
+            full+=obj.delta;
+            full=full.replace(/(?:Anything else\??)$/i,'');
+            line.textContent=full;out.scrollTop=out.scrollHeight;
+          }else if(eventType==='response.refusal.delta' && obj.delta){
+            full+=obj.delta;line.textContent=full;
+          }else if(eventType==='response.completed'){
+            // finalize after loop
+          }
+        }
+      }
+    }
+    line.classList.replace('stream','ai');
+    if(full.trim()){
+      if(shouldAddClosing(userText,full)) full+='\n\n'+localizedClosing();
+      line.textContent=full;
+      conversation.push({role:'assistant',content:full});
+    }else{
+      line.textContent='[No tokens – responses stream empty]';
+    }
+  }catch(e){
+    if(e.name==='AbortError'){line.classList.replace('stream','warn');line.textContent='[Stream aborted]';}
+    else {line.classList.replace('stream','error');line.textContent='STREAM FAIL: '+e.message;}
+  }
+  streaming=false;controller=null;
+}
+function abortStream(){if(streaming&&controller){controller.abort();toast('Stream aborted','warn');streaming=false;controller=null;}}
+
+/* ========= COMMANDS ========= */
+const commands={
+  start:()=>{if(!startUsed){startUsed=true;enterAgent();return 'Agent intro launching.';}return agentMode?'Agent active.':'Use start.';},
+  help:()=>{
+    if(!startUsed)return 'Only `start` available.';
+    if(agentMode&&agentLangPhase&&!agentLangConfirmed)return 'Lock language: agent lang <code>';
+    if(agentMode&&!registered)return 'Authenticate: /register <handle> or /login <handle>.';
+    const base=['start','help','clear','poweroff','status','inventory','lore','reset progress',
+      '/register','/login','/logout','/exit','/abort','agent temp/style/lang',
+      'socials','closing','flavor','stream'];
+    if(!agentMode){base.push('wallet','matrix','echo');}
+    return 'Commands: '+base.join(', ')+(agentMode?' (slash commands usable inside agent)':'');
+  },
+  echo:(a)=>a.join(' '),
+  clear:()=>{out.innerHTML='';return 'Cleared.';},
+  wallet:(a)=>{if(!startUsed)return 'Locked until start';if(agentMode)return 'Wallet locked in agent.';if(!a[0])return 'wallet connect|disconnect balance airdrop';
+    if(a[0]==='connect'){walletConnect();return 'Connecting...';}
+    if(a[0]==='disconnect'){if(walletConnected)walletConnect();return 'Disconnecting...';}
+    if(a[0]==='balance')return walletConnected?'Balance '+walletBalance.toFixed(2)+' SUI':'Not connected.';
+    if(a[0]==='airdrop'){mockAirdrop();return 'Airdrop requested.';}
+    return 'wallet connect|disconnect balance airdrop';},
+  matrix:(a)=>{if(!startUsed)return 'Locked until start';if(agentMode)return 'Matrix toggle blocked.';if(!a[0])return 'matrix on|off';
+    if(a[0]==='on'){if(!matrixOn){matrixOn=true;drawMatrix();}return 'Matrix ON';}
+    if(a[0]==='off'){matrixOn=false;layers.forEach(l=>l.ctx.clearRect(0,0,l.canvas.width,l.canvas.height));return 'Matrix OFF';}
+    return 'matrix on|off';},
+  poweroff:()=>{setTimeout(()=>location.reload(),600);return 'Powering off...';},
+  status:()=>gameStatusBlock(),
+  inventory:()=>`Filaments: ${game.filaments.join(', ')||'None'}`,
+  inv:()=>`Filaments: ${game.filaments.join(', ')||'None'}`,
+  lore:()=>game.loreSnippets.length?game.loreSnippets.join('\n---\n'):'No lore yet.',
+  reset:(a)=>{if(a[0]==='progress'||a[0]==='exit'){if(game.questionPoints<QUESTION_CAP)return 'Need 100 to ascend.';game.ascensions++;game.questionPoints=0;game.filaments=[];game.rank='Initiate';addLore('Ascension '+game.ascensions);log('AGENT: Ascension '+game.ascensions+' registered.','ai');hudRender();pushProgress();return 'Progress reset.';}return 'reset progress';},
+  socials:()=>{if(!registered)return 'Register or login first to access socials.';socialsContextActive=true;return 'SOCIALS MODE: type `twitter` to open official feed or `exit` to cancel.';},
+  closing:(a)=>{if(!a[0])return 'closing on|off (current: '+(closingPromptEnabled?'on':'off')+')';if(a[0]==='on'){closingPromptEnabled=true;return 'Closing prompt ON';}if(a[0]==='off'){closingPromptEnabled=false;return 'Closing prompt OFF';}return 'closing on|off';},
+  flavor:(a)=>{if(!a[0])return 'flavor on|off (current: '+(matrixFlavor?'on':'off')+')';if(a[0]==='on'){matrixFlavor=true;return 'Matrix flavor ON';}if(a[0]==='off'){matrixFlavor=false;return 'Matrix flavor OFF';}return 'flavor on|off';},
+  stream:(a)=>{if(!a[0])return 'stream on|off (current: '+(streamingEnabled?'on':'off')+')';if(a[0]==='on'){streamingEnabled=true;return 'Streaming ON';}if(a[0]==='off'){streamingEnabled=false;return 'Streaming OFF';}return 'stream on|off';}
+};
+
+
+
+    // Password masking helpers
+    function setInputMask(){
+      const input = document.getElementById('command');
+      if (input) input.type = 'password';
+      document.getElementById('cmd-prompt').textContent = '(pw)>';
+    }
+    function resetInputMask(){
+      const input = document.getElementById('command');
+      if (input) input.type = 'text';
+      document.getElementById('cmd-prompt').textContent =
+        (agentMode ? (forcedLang||detectedLang).toUpperCase() : '') + '>';
+    }
+
+    // processPassword (register/login flow)
+    async function processPassword(line) {
+  const pw = line;
+  if (pw.length < 6 || pw.length > 64) {
+    log('Password must be 6–64 chars. Restart with /' + pendingAuth.type + ' ' + pendingAuth.handle, 'error');
+    pendingAuth = null;
+    resetInputMask();
+    return;
+  }
+  try {
+    if (pendingAuth.type === 'register') {
+      const reg = await api('/api/register', { username: pendingAuth.handle, password: pw });
+      if (!reg.ok) throw new Error(reg.error || 'register_failed');   // <-- PATCHED: .ok not .success
+      const login = await api('/api/login', { username: pendingAuth.handle, password: pw });
+      if (!login.token) throw new Error(login.error || 'login_failed');
+      authToken = login.token;
+      username = pendingAuth.handle;
+      registered = true;
+      localStorage.setItem('sui_username', username);
+      localStorage.setItem('sui_token', authToken);
+      log('AGENT: Registration & login successful: ' + username + '.', 'ok');
+    } else {
+      const r = await api('/api/login', { username: pendingAuth.handle, password: pw });
+      if (!r.token) throw new Error(r.error || 'login_failed');
+      authToken = r.token;
+      username = pendingAuth.handle;
+      registered = true;
+      localStorage.setItem('sui_username', username);
+      localStorage.setItem('sui_token', authToken);
+      log('AGENT: Login successful: ' + username + '.', 'ok');
+    }
+    guideBanner.textContent = 'AGENT MODE – STREAMING';
+    hudRender();
+    startProgressPushLoop();
+    pushProgress();
+  } catch (e) {
+    log('Auth failed: ' + (e.message || e), 'error');
+  } finally {
+    pendingAuth = null;
+    resetInputMask();
+  }
+}
+
+
+async function sendUserQuestion(userText) {
+  // Reward the user for asking a valid question
+  rewardForQuestionSimple(userText);
+
+  // Append the user’s message to the conversation history
+  conversation.push({ role: 'user', content: userText });
+
+  // Add a placeholder “streaming” line to the terminal
+  const lineEl = log('', 'stream');
+
+  try {
+    // Send the full conversation to /api/agent for streaming
+    const res = await fetch('/api/agent', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'text/event-stream'
+      },
+      body: JSON.stringify({
+        messages: conversation,
+        temperature,
+        style: styleMode,
+        stream: true
+      })
+    });
+
+    if (!res.ok) {
+      // If the response isn’t OK, show the error HTML/text
+      const errText = await res.text();
+      lineEl.classList.replace('stream', 'error');
+      lineEl.textContent = `STREAM ERROR: ${res.status} ${errText}`;
+      return;
+    }
+
+    // Read the streaming response
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+    let full = '';
+
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+
+      // Split on SSE event boundaries
+      const parts = buffer.split(/\n\n/);
+      buffer = parts.pop(); // keep any partial event for next iteration
+      for (const chunk of parts) {
+        // Extract only the lines that start with "data:"
+        const dataLines = chunk.split(/\r?\n/).filter(l => l.startsWith('data:'));
+        for (const l of dataLines) {
+          const payload = l.replace(/^data:\s*/, '');
+          if (payload === '[DONE]') continue;
+          let obj;
+          try {
+            obj = JSON.parse(payload);
+          } catch {
+            continue;
+          }
+          // Delta content lives in obj.choices[0].delta.content
+          const delta = obj.choices?.[0]?.delta?.content;
+          if (delta) {
+            full += delta;
+            lineEl.textContent = full;
+            out.scrollTop = out.scrollHeight;
+          }
+        }
+      }
+    }
+
+    // Mark the line as AI output when complete
+    lineEl.classList.replace('stream', 'ai');
+    conversation.push({ role: 'assistant', content: full });
+
+  } catch (err) {
+    // Handle network or parsing errors
+    lineEl.classList.replace('stream', 'error');
+    lineEl.textContent = 'STREAM ERROR: ' + err.message;
+  }
+}
+
+
+
+/* ========= RUN (INPUT DISPATCH) ========= */
+function run(line){
+  if(!line)return;
+  if(!sessionChecked && localStorage.getItem('sui_token')){log('Waiting for session validation…','faint');return;}
+  const now=Date.now();if(now-game.lastCommandTs<ANTI_SPAM_MS){log('Cooldown…','warn');return;}game.lastCommandTs=now;
+  if(pendingAuth){log(promptEl.textContent+' ********','user');processPassword(line);return;}
+
+  if(socialsContextActive){
+    const lower=line.toLowerCase();
+    if(lower==='twitter'){socialsContextActive=false;log('Opening Twitter (X)...','ok');window.open('https://x.com/SuiTerminal','_blank','noopener,noreferrer');return;}
+    if(lower==='exit'){socialsContextActive=false;log('Socials mode exited.','faint');return;}
+    log('Type `twitter` to open feed or `exit` to cancel.','warn');return;
+  }
+
+  log(promptEl.textContent+line,'user');
+  if(line==='/abort'){abortStream();return;}
+
+  if(line.startsWith('/register ')){
+    if(registered){log('Already registered as '+username+'. /logout to switch.','warn');return;}
+    const parts=line.trim().split(/\s+/);if(parts.length!==2){log('Usage: /register <handle>','error');return;}
+    const handle=parts[1];if(!/^[a-z0-9_]{3,16}$/i.test(handle)){log('Invalid handle format.','error');return;}
+    pendingAuth={type:'register',handle};log('Enter password (hidden next line)...','ai');setInputMask();return;
+  }
+  if(line.startsWith('/login ')){
+    if(registered){log('Already active as '+username+'. /logout first.','warn');return;}
+    const parts=line.trim().split(/\s+/);if(parts.length!==2){log('Usage: /login <handle>','error');return;}
+    const handle=parts[1];pendingAuth={type:'login',handle};log('Enter password (hidden next line)...','ai');setInputMask();return;
+  }
+  if(line==='/logout'){
+    if(!registered){log('Not logged in.','warn');return;}
+    (async()=>{try{await api('/api/logout',{});}catch(_){}
+      clearSession();log('AGENT: Logged out. Agent locked.','warn');showAuthPrompt();hudRender();
+    })();return;
+  }
+
+  if(!startUsed && line.split(/\s+/)[0].toLowerCase()!=='start'){log('Only `start` available.','error');return;}
+
+  if(agentMode){
+    if(line.startsWith('agent ')){handleAgentMeta(line.slice(6));return;}
+    if(line.startsWith('/')){
+      if(line==='/exit'){if(streaming)abortStream();agentMode=false;guideBanner.classList.remove('active');promptEl.textContent='>';log('Agent channel closed.','warn');return;}
+      if(line==='/abort'){abortStream();return;}
+      const consumed=handleSlashCommand(line);if(consumed)return;
+    }
+    if(agentLangPhase && !agentLangConfirmed){log('AGENT: Language not locked. Use: agent lang <code>','warn');return;}
+    if(!registered){log('AUTH REQUIRED: /register <handle> or /login <handle> to engage the mentor.','warn');return;}
+    rewardForQuestionSimple(line);
+    if(streaming){log('Wait or /abort','warn');return;}
+    sendUserQuestion(line);return;
+  }
+
+  const parts=line.split(/\s+/);const c=parts[0].toLowerCase();const a=parts.slice(1);
+  if(commands[c]){try{const r=commands[c](a);if(r!==undefined&&r!=='')log(r,'guide');hudRender();}catch(err){log('ERR: '+err.message,'error');}}
+  else log('Unknown command: '+c,'error');
+}
+
+/* ========= AGENT META ========= */
+function handleAgentMeta(str){
+  const seg=str.trim().split(/\s+/);
+  if(seg[0]==='temp'){const v=parseFloat(seg[1]);if(isNaN(v)||v<0||v>1.5){log('Temp 0-1.5','warn');return;}temperature=v;log('Temperature '+temperature,'ok');return;}
+  if(seg[0]==='style'){const s=seg[1];if(!s){log('Styles: default concise technical poetic raw','warn');return;}styleMode=s;conversation.push({role:'system',content:'Style now '+s});log('Style '+s,'ok');return;}
+  if(seg[0]==='lang'){
+    const code=(seg[1]||'').toLowerCase();
+    if(!code){log('Supported: '+Object.keys(SUPPORTED_LANGS).join(', '),'warn');return;}
+    if(!SUPPORTED_LANGS[code]){log('Unknown lang '+code+' Supported: '+Object.keys(SUPPORTED_LANGS).join(', '),'warn');return;}
+    forcedLang=code;detectedLang=code;promptEl.textContent=code.toUpperCase()+">";
+    conversation=[{role:'system',content:buildSystemPrompt()}];
+    log('Language locked '+code+' ('+SUPPORTED_LANGS[code]+')','ok');
+    if(agentLangPhase && !agentLangConfirmed){
+      agentLangConfirmed=true;agentLangPhase=false;
+      guideBanner.textContent=registered?'AGENT MODE – STREAMING':'AUTH REQUIRED – /register or /login';
+      log('AGENT: Proceeding deeper...','ai');
+      setTimeout(()=>runAgentDramaticPhaseFor(code),600);
+    }else{
+      log('AGENT: Output language switched to '+SUPPORTED_LANGS[code]+'.','ai');
+    }
+    hudRender();return;
+  }
+  if(['lang?','langs?'].includes(seg[0])){log('Languages: '+Object.keys(SUPPORTED_LANGS).join(', '),'faint');return;}
+  log('Agent meta: temp <n> | style <m> | lang <code> | lang?','faint');
+}
+
+/* ========= INTRO / VIDEO ========= */
+const intro=$('intro'),introYes=$('intro-yes'),introNo=$('intro-no');
+const videoGate=$('video-gate'),gateVideo=$('gate-video');
+const videoProgressBar=document.querySelector('#video-progress span');
+const videoMsg=$('video-msg'),skipDot=$('skip-dot');
+const VIDEO_SRC='video/video.mp4';
+
+function startVideoGate(){
+  forcePlay();
+  if(!intro) { activateTerminal(); return; }
+  intro.classList.add('fade-out','disabled');
+  setTimeout(()=>{
+    if(intro && intro.parentNode) intro.remove();
+    launchVideo();
+  },620);
+  setTimeout(()=>{ if(!videoGate.classList.contains('active')) activateTerminal(); },5000);
+}
+function launchVideo(){
+  videoGate.classList.add('active');
+  bgm.volume=0.15;
+  gateVideo.src=VIDEO_SRC;
+  gateVideo.play().then(()=>{
+    setTimeout(()=>{ gateVideo.muted=false; gateVideo.volume=1; },100);
+  }).catch(()=>log('VIDEO: Autoplay blocked, click video or press . to skip','warn'));
+  updateVideoProgress();
+  setTimeout(()=>{if(gateVideo.readyState<1){log('VIDEO WARNING: Not loading – skipping.','warn');skipVideo();}},7000);
+}
+function updateVideoProgress(){
+  if(gateVideo.duration){
+    const p=(gateVideo.currentTime/gateVideo.duration)*100;
+    videoProgressBar.style.width=p+'%';
+    videoMsg.textContent='Watching mandatory initiation feed... '+p.toFixed(1)+'%';
+  }
+  if(!videoGate.classList.contains('active')) return;
+  requestAnimationFrame(updateVideoProgress);
+}
+function skipVideo(){
+  if(!videoGate.classList.contains('active'))return;
+  gateVideo.onended=null;
+  gateVideo.pause();
+  bgm.volume=1;
+  videoGate.classList.remove('active');
+  activateTerminal();
+}
+skipDot.addEventListener('click',skipVideo);
+window.addEventListener('keydown',e=>{if(e.key==='.')skipVideo();},{capture:true});
+gateVideo.addEventListener('ended',()=>{
+  bgm.volume=1;
+  if(!terminalActivated){
+    videoGate.classList.remove('active');
+    activateTerminal();
+  }
+});
+function safeBindIntro(){
+  if(!introYes || introYes.dataset.bound==='1') return;
+  introYes.dataset.bound='1';
+  introYes.addEventListener('click', ()=>{
+    gateVideo.muted=true;
+    startVideoGate();
+    setTimeout(()=>{ try{gateVideo.muted=false;gateVideo.volume=1;}catch(e){} },150);
+  });
+  introNo.addEventListener('click', ()=>{
+    window.close();
+    setTimeout(()=>{ if(!document.hidden) location.href='about:blank'; },300);
+  });
+}
+
+/* ========= AUDIO & TERMINAL BOOT ========= */
+const bgm=$('bgm');bgm.src='music/theme.mp3';bgm.loop=true;bgm.volume=1;let musicStarted=false;
+function forcePlay(){if(musicStarted)return;musicStarted=true;const play=()=>bgm.play().catch(()=>setTimeout(play,600));play();}
+setInterval(()=>{if(musicStarted&&bgm.paused){bgm.play().catch(()=>{});}},5000);
+document.addEventListener('click',tryUnlockAudio,{once:true});
+document.addEventListener('keydown',tryUnlockAudio,{once:true});
+function tryUnlockAudio(){if(!musicStarted){forcePlay();}else if(bgm.paused){bgm.play().catch(()=>{});} }
+function activateTerminal(){
+  if(terminalActivated) return;
+  terminalActivated=true;
+  $('terminal-window').classList.add('active');
+  initIntro();
+}
+function initIntro(){
+  if(introBootStarted) return;
+  introBootStarted=true;
+  cmd.disabled=true;guideBanner.classList.add('active');promptEl.textContent='MATRIX>';
+  const sessionHash='0x'+Array.from(crypto.getRandomValues(new Uint8Array(6))).map(b=>b.toString(16).padStart(2,'0')).join('');
+  const lines=[
+    '▌ INITIALIZING SUI.exe Q&A NODE ...',
+    '▌ HANDSHAKE HASH '+sessionHash,
+    '▌ CALIBRATING SIGNAL: NOISE  ████▒▒▒ 42%',
+    '▌ DECRYPTING LAYERS  ██████▒▒ 68%',
+    '▌ ENTROPY BUFFER SYNCH ███████▒ 83%',
+    '▌ PROTOCOL: ASYMMETRIC ATTENTION STREAM ✓',
+    '▌ STATUS: FIREWALL BREACH VECTOR STABLE',
+    '▌ OBJECTIVE: ACCRUE 100 INQUIRY POINTS',
+    '▌ CONTROL TRANSFER (10s)...'
+  ];
+  let i=0;
+  function next(){ if(i<lines.length){ logTypewriter(lines[i],'ok',9); i++; setTimeout(next,580); } else startControlCountdown(); }
+  next();
+}
+function startControlCountdown(){
+  let secs=10;
+  function tick(){
+    if(secs===0){
+      log('▌ CONTROL TRANSFER COMPLETE – ONLY `start` IS PERMITTED','ok');
+      log('Type `start` to activate streaming AI agent.'+(MOCK_MODE?' (mock mode ON)':''),'ok');
+      cmd.disabled=false;cmd.focus();
+      if(authToken&&username){log('AGENT: Pending session validation...','faint');}
+      return;
+    }
+    log('TRANSFERRING CONTROL... '+secs+'s','faint');
+    secs--;setTimeout(tick,1000);
+  }
+  tick();
+}
+
+/* ========= SCORE SYNC ========= */
+async function submitScore(){try{if(!registered)return;await fetch('/api/score',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:(username||playerId),exitProgress:game.questionPoints,ascensions:game.ascensions,rank:game.rank})});}catch(e){}}
+setInterval(()=>submitScore(),15000);
+
+/* ========= FORM / DOM READY ========= */
+document.addEventListener('contextmenu',e=>e.preventDefault());
+document.addEventListener('DOMContentLoaded',()=>{hudRender();safeBindIntro();validateSessionBoot();});
+(function(){const form=document.getElementById('cmd-form');form?.addEventListener('submit',e=>{e.preventDefault();const v=command.value.trim();if(!v)return;try{run(v);}catch(err){console.error('[run error]',err);}command.value='';});})();
+(function(){if(!registered){showAuthPrompt();}else{log('Session token present – validating...','faint');}})();
+</script>
+</body>
+</html>

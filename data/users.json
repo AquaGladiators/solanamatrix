@@ -1,0 +1,38 @@
+[
+  {
+    "id": "1468a7ba-6fb1-4dbf-becf-15a44cc67480",
+    "username": "noob",
+    "pass": "$2b$10$vVmrnyWjUT33k0UY1HChBuAFCL99njtj6Nz68qXIFDphNg5kqZB2K",
+    "stats": {
+      "exitProgress": 16,
+      "ascensions": 0,
+      "rank": "Initiate",
+      "updatedAt": 1753038686557
+    },
+    "createdAt": 1753036502635
+  },
+  {
+    "id": "ad839471-a09c-423b-a123-be570c9b6b03",
+    "username": "noob22",
+    "pass": "$2b$10$aLYeuhQ209RHYFJwVGKauOQH9Ix44cB16W.rjupnjP3QEkkwd6l9G",
+    "stats": {
+      "exitProgress": 16,
+      "ascensions": 0,
+      "rank": "Initiate",
+      "updatedAt": 1753040759645
+    },
+    "createdAt": 1753038702598
+  },
+  {
+    "id": "fdde73f9-226e-4964-8df2-32c9ba6a6968",
+    "username": "noober33",
+    "pass": "$2a$10$HuEooORL7t9heEgEo44GM.1rALk0nWF4pXqc6NjNkUr0BX1LorokW",
+    "stats": {
+      "exitProgress": 0,
+      "ascensions": 0,
+      "rank": "Initiate",
+      "updatedAt": 1753041212226
+    },
+    "createdAt": 1753041212226
+  }
+]
